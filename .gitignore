@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env
+data/raw/*
+data/enriched/*
+data/scored/*
+data/output/*
+!data/raw/.gitkeep
+!data/enriched/.gitkeep
+!data/scored/.gitkeep
+!data/output/.gitkeep
+node_modules/
