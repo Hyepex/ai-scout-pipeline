@@ -6,11 +6,16 @@ on the cost or ToS risk of paid sources (Crunchbase, Wellfound, etc).
 
 ## What it does
 
-1. **Ingest** (`src/ingest.py`) — pulls launches tagged `artificial-intelligence`
-   or `developer-tools` from Product Hunt's official v2 GraphQL API, keeps the
-   ones that are genuinely AI-related (topic match, or a keyword match on the
-   tagline/description), and resolves each tracking-redirect website link to
-   its real domain.
+1. **Ingest** — two interchangeable sources, same output schema downstream:
+   - `src/ingest.py` (needs a token) — pulls launches tagged
+     `artificial-intelligence` or `developer-tools` from Product Hunt's
+     official v2 GraphQL API, keeps the ones that are genuinely AI-related
+     (topic match, or a keyword match on the tagline/description), and
+     resolves each tracking-redirect website link to its real domain.
+   - `src/ingest_feed.py` (needs nothing) — a token-free fallback that reads
+     Product Hunt's public Atom feed plus each product page's static HTML
+     (plain HTTP, no login, no automated browser). See "No-token mode" below
+     for what it can and can't get.
 2. **Enrich** (`src/enrich.py`) — visits each resolved domain with Playwright
    and extracts about/pricing/docs page presence, social links (LinkedIn,
    Twitter/X), and a GitHub repo link with its star count.
@@ -25,37 +30,73 @@ on the cost or ToS risk of paid sources (Crunchbase, Wellfound, etc).
 5. **Ranked output** (`src/rank_output.py`) — CSV/JSON export sorted by
    composite score, with every sub-score visible.
 
-`src/pipeline.py` runs steps 1-3 end to end for a given date range.
+`src/pipeline.py` runs ingest → enrich → score → rank end to end, for either source.
 
 ## Setup
 
 ```bash
 pip install -r requirements.txt
 playwright install chromium
-cp .env.example .env   # then paste in your Product Hunt developer token
 ```
 
-Get a token: log into producthunt.com → account settings → Applications →
-create an application → copy the **Developer Token**. Product Hunt does not
-expose maker email addresses through the API — this pipeline never tries to;
-derive contact info from the resolved website domain if you need it later.
+The feed-fallback source needs nothing further. For the full API source,
+copy `.env.example` to `.env` and paste in a Product Hunt developer token:
+log into producthunt.com → account settings → Applications → create an
+application → copy the **Developer Token** (2 minutes, free, no app review).
+Product Hunt does not expose maker email addresses through either path —
+this pipeline never tries to; derive contact info from the resolved website
+domain if you need it later.
 
 ## Usage
 
 ```bash
-# Full pipeline for a date range
-python -m src.pipeline --after 2026-06-01 --before 2026-09-01 --run-id weekly
+# Full pipeline, no token needed (feed-fallback source, ~50 most recent launches)
+python -m src.pipeline --source feed --run-id latest
+
+# Full pipeline, needs PRODUCTHUNT_TOKEN (full historical range, votes/comments included)
+python -m src.pipeline --source api --after 2026-06-01 --before 2026-09-01 --run-id weekly
 
 # Individual steps
-python -m src.ingest --after 2026-06-01 --before 2026-09-01 --out data/raw/launches.jsonl
+python -m src.ingest_feed --out data/raw/launches.jsonl          # no token
+python -m src.ingest --after 2026-06-01 --before 2026-09-01 --out data/raw/launches.jsonl  # needs token
 python -m src.enrich --in data/raw/launches.jsonl --out data/enriched/launches.jsonl
 python -m src.rank_output --in data/scored/launches.jsonl --out-prefix data/output/ranked
 
-# Backtest
+# Backtest — needs PRODUCTHUNT_TOKEN, see "No-token mode" below for why
 python -m src.backtest build --after 2025-09-01 --before 2026-03-01 --out-dir data/scored/backtest
 # ... fill in the `outcome` column (funded / active / dead) in the generated review.csv ...
 python -m src.backtest summarize --review data/scored/backtest/review.csv
 ```
+
+## No-token mode: what it costs you
+
+`src/ingest_feed.py` was built after discovering the official API's data
+*is* mostly reachable through pages Product Hunt serves publicly — no login,
+no scraping tool, just plain HTTP GETs to the Atom feed and to each product
+page's static HTML. Verified live: real website domains (already past any
+tracking redirect), GitHub links, topics, and full maker-handle lists are
+all sitting in that static HTML.
+
+What isn't: **votes_count and comments_count only render client-side via
+JavaScript**. Rendering a Product Hunt page with Playwright to read them
+triggers Product Hunt's Cloudflare bot challenge ("Just a moment...") —
+confirmed live, plain HTTP requests to the same page succeed every time, only
+automated-browser rendering gets challenged. This pipeline does not attempt
+to defeat that challenge; bypassing a platform's active bot detection is out
+of scope here regardless of which data source is involved.
+
+Concretely, in `--source feed` mode: **Traction (0-30 of the composite) and
+the votes-based half of Momentum (part of 0-20) score 0 for every record.**
+Every launch ties on those dimensions, so the ranking in this mode is really
+driven by Team + Market/Product + recency, not the full traction-aware
+rubric this project set out to build.
+
+There is also no historical-window path without the token: the public feed
+exposes only the ~50 most-recently-touched launches, with no date-range
+parameter. **The backtest cannot run against feed-fallback data at all** —
+there's no responsible way to assemble a clean 6-12-month-old population
+from it. Get the token when you're ready to validate the rubric; that step
+has no workaround.
 
 ## Scoring methodology and the weight-sweep finding
 
