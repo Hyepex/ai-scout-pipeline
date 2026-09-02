@@ -56,10 +56,10 @@ def generate(run_id: str, out_path: Path) -> None:
         raise SystemExit(f"{scored_path} not found. Run src.pipeline or src.rank_output for run-id '{run_id}' first.")
     scored = json.loads(scored_path.read_text(encoding="utf-8"))
 
-    raw_path = Path(f"data/raw/{run_id}.jsonl")
+    stats_path = Path(f"data/raw/{run_id}.stats.json")
     scanned = None
-    if raw_path.exists():
-        scanned = len(raw_path.read_text(encoding="utf-8").splitlines())
+    if stats_path.exists():
+        scanned = json.loads(stats_path.read_text(encoding="utf-8"))["scanned"]
 
     enriched_path = Path(f"data/enriched/{run_id}.jsonl")
     enrich_failed = 0
