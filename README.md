@@ -29,6 +29,12 @@ on the cost or ToS risk of paid sources (Crunchbase, Wellfound, etc).
    company's current status.
 5. **Ranked output** (`src/rank_output.py`) — CSV/JSON export sorted by
    composite score, with every sub-score visible.
+6. **Dashboard** (`src/dashboard.py`) — generates "Scout Deck", a self-contained
+   HTML view of a run: pipeline funnel, signal-coverage bars, a composite-score
+   histogram, and a sortable/filterable list of every company with a per-row
+   score breakdown (each rubric category shown as its own segment, with the
+   segments that weren't measured this run drawn hatched instead of empty, so
+   a feed-fallback run is visually honest about what it didn't score).
 
 `src/pipeline.py` runs ingest → enrich → score → rank end to end, for either source.
 
@@ -66,7 +72,13 @@ python -m src.rank_output --in data/scored/launches.jsonl --out-prefix data/outp
 python -m src.backtest build --after 2025-09-01 --before 2026-03-01 --out-dir data/scored/backtest
 # ... fill in the `outcome` column (funded / active / dead) in the generated review.csv ...
 python -m src.backtest summarize --review data/scored/backtest/review.csv
+
+# Dashboard, from any run-id produced above
+python -m src.dashboard --run-id weekly --out dashboard.html
 ```
+
+Open `dashboard.html` directly in a browser, or hand it to Claude Code to
+publish as a shareable Artifact.
 
 ## No-token mode: what it costs you
 

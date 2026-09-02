@@ -1,0 +1,441 @@
+<title>Scout Deck</title>
+<style>
+  :root{
+    --bg:#F5F6FA; --surface:#FFFFFF; --surface-alt:#FAFBFD; --border:#E1E4EC;
+    --text:#1B1F2A; --text-secondary:#565C6E; --text-muted:#8991A3;
+    --accent:#C4801A; --accent-soft:#F3E3CA; --track:#EDEFF4;
+    --cat-traction:#C4581F; --cat-team:#3A6FC4; --cat-market:#237A4E; --cat-momentum:#7C56B8;
+    --status-good:#1F8A57; --status-warning:#B9821B; --status-critical:#C23B32;
+    --shadow: 0 1px 2px rgba(20,23,31,.04), 0 8px 24px -12px rgba(20,23,31,.12);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#14171F; --surface:#1C202B; --surface-alt:#20242F; --border:#2A2F3D;
+      --text:#EDEFF4; --text-secondary:#A8AEBD; --text-muted:#6C7386;
+      --accent:#E8A33D; --accent-soft:#3A2E15; --track:#262B38;
+      --cat-traction:#D9662A; --cat-team:#4F8FE0; --cat-market:#2F9D65; --cat-momentum:#9B6FD1;
+      --status-good:#2FB673; --status-warning:#E0A83A; --status-critical:#E2584F;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px -12px rgba(0,0,0,.5);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#14171F; --surface:#1C202B; --surface-alt:#20242F; --border:#2A2F3D;
+    --text:#EDEFF4; --text-secondary:#A8AEBD; --text-muted:#6C7386;
+    --accent:#E8A33D; --accent-soft:#3A2E15; --track:#262B38;
+    --cat-traction:#D9662A; --cat-team:#4F8FE0; --cat-market:#2F9D65; --cat-momentum:#9B6FD1;
+    --status-good:#2FB673; --status-warning:#E0A83A; --status-critical:#E2584F;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px -12px rgba(0,0,0,.5);
+  }
+
+  *{ box-sizing:border-box; }
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:'IBM Plex Sans',system-ui,-apple-system,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{ max-width:1040px; margin:0 auto; padding:40px 24px 80px; }
+  .mono{ font-family:'IBM Plex Mono',ui-monospace,'SF Mono',monospace; font-variant-numeric:tabular-nums; }
+  .eyebrow{
+    font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.12em; text-transform:uppercase;
+    color:var(--text-muted); font-weight:500;
+  }
+  h1,h2,h3{ font-family:'Fraunces',Georgia,serif; text-wrap:balance; margin:0; }
+  a{ color:inherit; }
+
+  /* ---------- masthead ---------- */
+  .masthead{
+    display:flex; justify-content:space-between; align-items:flex-end; gap:24px;
+    padding-bottom:28px; margin-bottom:28px; border-bottom:1px solid var(--border);
+    flex-wrap:wrap;
+  }
+  .masthead h1{ font-size:44px; font-weight:600; font-style:italic; letter-spacing:-.01em; margin-top:6px; }
+  .masthead p{ color:var(--text-secondary); font-size:15px; max-width:52ch; margin-top:10px; line-height:1.55; }
+  .meta-block{ text-align:right; display:flex; flex-direction:column; gap:8px; align-items:flex-end; }
+  .pill{
+    display:inline-flex; align-items:center; gap:6px; padding:5px 10px; border-radius:100px;
+    font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:500; letter-spacing:.03em;
+    border:1px solid var(--border); color:var(--text-secondary); background:var(--surface);
+  }
+  .pill.warning{ color:var(--status-warning); border-color:color-mix(in oklab, var(--status-warning) 40%, var(--border)); background:color-mix(in oklab, var(--status-warning) 10%, var(--surface)); }
+  .pill.good{ color:var(--status-good); border-color:color-mix(in oklab, var(--status-good) 40%, var(--border)); background:color-mix(in oklab, var(--status-good) 10%, var(--surface)); }
+  .pill-dot{ width:6px; height:6px; border-radius:50%; background:currentColor; }
+  .run-id{ font-size:11px; color:var(--text-muted); }
+
+  /* ---------- funnel ---------- */
+  .funnel{
+    display:flex; align-items:stretch; gap:0; margin-bottom:28px; overflow-x:auto;
+    border:1px solid var(--border); border-radius:12px; background:var(--surface); box-shadow:var(--shadow);
+  }
+  .funnel-step{ flex:1 1 0; min-width:140px; padding:18px 20px; position:relative; }
+  .funnel-step + .funnel-step{ border-left:1px solid var(--border); }
+  .funnel-step .num{ font-size:28px; font-weight:600; line-height:1; }
+  .funnel-step .label{ font-size:11.5px; color:var(--text-secondary); margin-top:8px; }
+  .funnel-step .sub{ font-size:11px; color:var(--text-muted); margin-top:2px; }
+  .funnel-step .arrow{
+    position:absolute; right:-11px; top:50%; transform:translateY(-50%); z-index:1;
+    width:20px; height:20px; border-radius:50%; background:var(--surface); border:1px solid var(--border);
+    display:flex; align-items:center; justify-content:center; color:var(--text-muted); font-size:11px;
+  }
+
+  /* ---------- two-col panel ---------- */
+  .panels{ display:grid; grid-template-columns:1.1fr 1fr; gap:16px; margin-bottom:28px; }
+  @media (max-width:720px){ .panels{ grid-template-columns:1fr; } }
+  .panel{ border:1px solid var(--border); border-radius:12px; background:var(--surface); padding:20px 22px; box-shadow:var(--shadow); }
+  .panel h3{ font-size:14px; font-style:italic; font-weight:600; margin-bottom:4px; }
+  .panel .panel-sub{ font-size:12px; color:var(--text-muted); margin-bottom:16px; }
+
+  .coverage-row{ display:flex; align-items:center; gap:12px; margin-bottom:11px; }
+  .coverage-row:last-child{ margin-bottom:0; }
+  .coverage-label{ width:96px; font-size:12.5px; color:var(--text-secondary); flex-shrink:0; }
+  .coverage-track{ flex:1; height:8px; border-radius:3px; background:var(--track); overflow:hidden; }
+  .coverage-fill{ height:100%; background:var(--accent); border-radius:3px; }
+  .coverage-val{ width:52px; text-align:right; font-size:12px; color:var(--text-muted); flex-shrink:0; }
+
+  #hist{ display:block; overflow:visible; }
+  .hist-bar{ fill:var(--accent); cursor:pointer; }
+  .hist-bar:hover{ fill:color-mix(in oklab, var(--accent) 80%, var(--text)); }
+  .hist-axis text{ fill:var(--text-muted); font-family:'IBM Plex Mono',monospace; font-size:9.5px; }
+  .hist-axis line{ stroke:var(--border); }
+
+  /* ---------- legend + controls ---------- */
+  .list-head{ display:flex; justify-content:space-between; align-items:center; gap:16px; margin-bottom:14px; flex-wrap:wrap; }
+  .rubric-legend{ display:flex; gap:14px; flex-wrap:wrap; font-size:11.5px; color:var(--text-secondary); }
+  .rubric-legend span{ display:inline-flex; align-items:center; gap:5px; }
+  .swatch{ width:9px; height:9px; border-radius:2px; display:inline-block; }
+  .swatch.hatched{ background-image:repeating-linear-gradient(135deg, var(--text-muted) 0 1.5px, transparent 1.5px 4px); background-color:var(--track); }
+
+  .controls{ display:flex; gap:10px; margin-bottom:18px; flex-wrap:wrap; }
+  .controls input[type=search]{
+    flex:1; min-width:180px; padding:9px 12px; border-radius:8px; border:1px solid var(--border);
+    background:var(--surface); color:var(--text); font-size:13px; font-family:inherit;
+  }
+  .controls select{
+    padding:9px 12px; border-radius:8px; border:1px solid var(--border); background:var(--surface);
+    color:var(--text); font-size:13px; font-family:inherit;
+  }
+  .controls input::placeholder{ color:var(--text-muted); }
+
+  /* ---------- ranked list ---------- */
+  .row{
+    border:1px solid var(--border); border-radius:12px; background:var(--surface);
+    margin-bottom:10px; box-shadow:var(--shadow); overflow:hidden;
+  }
+  .row-main{
+    display:grid; grid-template-columns:36px 1fr 190px 76px 22px; gap:16px; align-items:center;
+    padding:14px 18px; cursor:pointer;
+  }
+  @media (max-width:640px){ .row-main{ grid-template-columns:28px 1fr 24px; } .row-bar-col, .row-score{ display:none; } }
+  .rank{ color:var(--text-muted); font-size:13px; }
+  .row-id{ min-width:0; }
+  .row-name{ font-weight:600; font-size:14.5px; display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; }
+  .row-name .domain{ font-size:11.5px; color:var(--accent); font-weight:400; }
+  .row-tagline{ font-size:12.5px; color:var(--text-secondary); margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .row-tags{ display:flex; gap:5px; margin-top:7px; flex-wrap:wrap; }
+  .tag{ font-size:10px; padding:2px 7px; border-radius:100px; background:var(--surface-alt); border:1px solid var(--border); color:var(--text-muted); font-family:'IBM Plex Mono',monospace; }
+  .badges{ display:flex; gap:5px; margin-top:7px; }
+  .badge{ font-size:10px; padding:2px 6px; border-radius:5px; font-family:'IBM Plex Mono',monospace; border:1px solid var(--border); color:var(--text-muted); }
+  .badge.on{ color:var(--status-good); border-color:color-mix(in oklab, var(--status-good) 35%, var(--border)); background:color-mix(in oklab, var(--status-good) 8%, transparent); }
+
+  .score-bar{ display:flex; height:9px; border-radius:3px; overflow:hidden; background:var(--track); }
+  .seg{ height:100%; position:relative; background:var(--track); }
+  .seg + .seg{ border-left:2px solid var(--surface); }
+  .seg-fill{ position:absolute; inset:0 auto 0 0; }
+  .seg-team .seg-fill{ background:var(--cat-team); }
+  .seg-market .seg-fill{ background:var(--cat-market); }
+  .seg-traction, .seg-momentum{ background-image:repeating-linear-gradient(135deg, var(--text-muted) 0 1.5px, transparent 1.5px 4.5px); opacity:.4; }
+  .row-score{ text-align:right; font-size:17px; font-weight:600; }
+  .row-score .cap{ font-size:10px; color:var(--text-muted); font-weight:400; }
+  .chevron{ color:var(--text-muted); transition:transform .15s ease; font-size:11px; text-align:center; }
+  .row.open .chevron{ transform:rotate(90deg); }
+
+  .row-detail{ max-height:0; overflow:hidden; transition:max-height .2s ease; border-top:1px solid transparent; }
+  .row.open .row-detail{ max-height:260px; border-top:1px solid var(--border); }
+  .row-detail-inner{ padding:16px 18px 18px; display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+  @media (max-width:640px){ .row-detail-inner{ grid-template-columns:1fr; } }
+  .sub-list{ display:flex; flex-direction:column; gap:6px; }
+  .sub-item{ display:flex; justify-content:space-between; font-size:12px; }
+  .sub-item .k{ color:var(--text-secondary); }
+  .sub-item .v{ font-family:'IBM Plex Mono',monospace; }
+  .sub-item.unmeasured .v{ color:var(--text-muted); }
+  .makers-line{ font-size:12px; color:var(--text-secondary); margin-top:10px; }
+  .makers-line .mono{ color:var(--text); }
+  .detail-links{ display:flex; gap:14px; margin-top:12px; font-size:12px; }
+  .detail-links a{ color:var(--accent); text-decoration:none; }
+
+  .empty-state{ text-align:center; padding:48px 20px; color:var(--text-muted); font-size:13px; }
+
+  footer{ margin-top:36px; padding-top:20px; border-top:1px solid var(--border); display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px; font-size:11.5px; color:var(--text-muted); }
+  footer a{ color:var(--accent); text-decoration:none; }
+
+  #tooltip{
+    position:fixed; pointer-events:none; z-index:50; background:var(--text); color:var(--bg);
+    font-family:'IBM Plex Mono',monospace; font-size:11px; padding:6px 9px; border-radius:6px; opacity:0;
+    transition:opacity .1s ease; white-space:nowrap; box-shadow:var(--shadow);
+  }
+
+  @media (prefers-reduced-motion: reduce){ *{ transition:none !important; } }
+</style>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,600&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+
+<div class="wrap">
+
+  <div class="masthead">
+    <div>
+      <div class="eyebrow">AI Scout Pipeline · Phase 1 · Product Hunt</div>
+      <h1>Scout Deck</h1>
+      <p id="summary-line">Loading run summary…</p>
+    </div>
+    <div class="meta-block">
+      <span class="pill warning"><span class="pill-dot"></span>FEED MODE — NO TOKEN</span>
+      <span class="run-id mono" id="run-id-label"></span>
+    </div>
+  </div>
+
+  <div class="funnel" id="funnel"></div>
+
+  <div class="panels">
+    <div class="panel">
+      <h3>Signal coverage</h3>
+      <div class="panel-sub">Share of the batch where enrichment actually found this signal</div>
+      <div id="coverage"></div>
+    </div>
+    <div class="panel">
+      <h3>Composite score spread</h3>
+      <div class="panel-sub" id="hist-sub"></div>
+      <svg id="hist" width="100%" height="150" viewBox="0 0 380 150" preserveAspectRatio="xMinYMin meet"></svg>
+    </div>
+  </div>
+
+  <div class="list-head">
+    <div class="rubric-legend" id="rubric-legend"></div>
+  </div>
+
+  <div class="controls">
+    <input type="search" id="search" placeholder="Filter by name, domain or topic…">
+    <select id="sort">
+      <option value="composite">Sort: composite score ↓</option>
+      <option value="name">Sort: name A–Z</option>
+      <option value="recent">Sort: most recent launch</option>
+      <option value="stars">Sort: GitHub stars ↓</option>
+    </select>
+  </div>
+
+  <div id="list"></div>
+
+  <footer>
+    <span>Generated from a live Product Hunt feed pull · scored with the v1 rubric · <span id="footer-count"></span> companies</span>
+    <a href="https://github.com/Hyepex/ai-scout-pipeline" target="_blank" rel="noopener">github.com/Hyepex/ai-scout-pipeline</a>
+  </footer>
+
+</div>
+
+<div id="tooltip"></div>
+
+<script>
+const DATA = /*__RUN_DATA__*/;
+const META = /*__RUN_META__*/;
+
+const CAPS = { traction: 30, team: 25, market: 25, momentum: 20 };
+const tooltip = document.getElementById('tooltip');
+
+function showTip(evt, text){
+  tooltip.textContent = text;
+  tooltip.style.opacity = 1;
+  tooltip.style.left = (evt.clientX + 14) + 'px';
+  tooltip.style.top = (evt.clientY + 14) + 'px';
+}
+function hideTip(){ tooltip.style.opacity = 0; }
+
+// ---------- masthead summary ----------
+document.getElementById('summary-line').textContent =
+  `${META.scanned} launches scanned from Product Hunt's public feed, ${META.aiConfirmed} confirmed AI-related, ` +
+  `enriched and scored against the four-category rubric. No developer token was used for this run.`;
+document.getElementById('run-id-label').textContent = `run · ${META.runId} · ${META.generatedAt}`;
+document.getElementById('footer-count').textContent = DATA.length;
+
+// ---------- funnel ----------
+const funnelSteps = [
+  { num: META.scanned, label: 'Feed entries scanned', sub: 'producthunt.com/feed' },
+  { num: META.aiConfirmed, label: 'AI-confirmed', sub: `${META.scanned - META.aiConfirmed} dropped (off-topic)` },
+  { num: META.enriched, label: 'Enriched', sub: `${META.enrichFailed} failed` },
+  { num: DATA.length, label: 'Scored & ranked', sub: 'ready below' },
+];
+document.getElementById('funnel').innerHTML = funnelSteps.map((s, i) => `
+  <div class="funnel-step">
+    <div class="num mono">${s.num}</div>
+    <div class="label">${s.label}</div>
+    <div class="sub mono">${s.sub}</div>
+    ${i < funnelSteps.length - 1 ? '<div class="arrow">→</div>' : ''}
+  </div>
+`).join('');
+
+// ---------- coverage ----------
+const covDefs = [
+  { key: 'gh', label: 'GitHub linked' },
+  { key: 'li', label: 'LinkedIn' },
+  { key: 'tw', label: 'Twitter / X' },
+  { key: 'pricing', label: 'Pricing page' },
+  { key: 'docs', label: 'Docs / demo' },
+];
+document.getElementById('coverage').innerHTML = covDefs.map(c => {
+  const count = DATA.filter(r => !!r[c.key]).length;
+  const pct = Math.round(100 * count / DATA.length);
+  return `
+    <div class="coverage-row">
+      <div class="coverage-label">${c.label}</div>
+      <div class="coverage-track"><div class="coverage-fill" style="width:${pct}%"></div></div>
+      <div class="coverage-val mono">${count}/${DATA.length}</div>
+    </div>`;
+}).join('');
+
+// ---------- histogram ----------
+(function drawHist(){
+  const scores = DATA.map(r => r.composite);
+  const max = Math.max(...scores);
+  const binSize = 5;
+  const binCount = Math.ceil((max + 0.01) / binSize) || 1;
+  const bins = new Array(binCount).fill(0);
+  scores.forEach(s => { bins[Math.min(binCount - 1, Math.floor(s / binSize))]++; });
+
+  document.getElementById('hist-sub').textContent =
+    `min ${Math.min(...scores)} · max ${max} · avg ${(scores.reduce((a,b)=>a+b,0)/scores.length).toFixed(1)} (of 50 reachable this run)`;
+
+  const svg = document.getElementById('hist');
+  const W = 380, H = 150, padL = 22, padB = 20, padT = 6, padR = 6;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+  const barGap = 4;
+  const barW = (plotW / binCount) - barGap;
+  const maxCount = Math.max(...bins);
+
+  let svgHtml = `<line class="hist-axis" x1="${padL}" y1="${H-padB}" x2="${W-padR}" y2="${H-padB}" stroke-width="1"/>`;
+  bins.forEach((count, i) => {
+    const h = maxCount ? (count / maxCount) * plotH : 0;
+    const x = padL + i * (barW + barGap);
+    const y = H - padB - h;
+    const label = `${i*binSize}–${i*binSize+binSize}`;
+    svgHtml += `<rect class="hist-bar" x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barW.toFixed(1)}" height="${h.toFixed(1)}" rx="2" data-label="${label}" data-count="${count}"/>`;
+    svgHtml += `<text class="hist-axis" x="${(x+barW/2).toFixed(1)}" y="${H-6}" text-anchor="middle">${i*binSize}</text>`;
+  });
+  svg.innerHTML = svgHtml;
+  svg.querySelectorAll('.hist-bar').forEach(bar => {
+    bar.addEventListener('mousemove', e => showTip(e, `${bar.dataset.label} pts · ${bar.dataset.count} companies`));
+    bar.addEventListener('mouseleave', hideTip);
+  });
+})();
+
+// ---------- rubric legend ----------
+const rubricDefs = [
+  { key: 'traction', label: 'Traction', cls: 'cat-traction', hatched: true },
+  { key: 'team', label: 'Team', cls: 'cat-team' },
+  { key: 'market', label: 'Market/Product', cls: 'cat-market' },
+  { key: 'momentum', label: 'Momentum', cls: 'cat-momentum', hatched: true },
+];
+document.getElementById('rubric-legend').innerHTML = rubricDefs.map(r => `
+  <span><span class="swatch ${r.hatched ? 'hatched' : ''}" style="${r.hatched ? '' : `background:var(--${r.cls})`}"></span>${r.label} /${CAPS[r.key]}${r.hatched ? ' · not measured' : ''}</span>
+`).join('');
+
+// ---------- ranked list ----------
+function scoreBarHtml(r){
+  return rubricDefs.map(def => {
+    const width = (CAPS[def.key] / 100) * 100;
+    if (def.hatched) {
+      return `<div class="seg seg-${def.key}" style="width:${width}%"></div>`;
+    }
+    const achieved = r[def.key];
+    const fillPct = Math.min(100, (achieved / CAPS[def.key]) * 100);
+    return `<div class="seg seg-${def.key}" style="width:${width}%"><div class="seg-fill" style="width:${fillPct}%"></div></div>`;
+  }).join('');
+}
+
+function subRow(label, key, cap, r, unmeasured){
+  const val = r.sub[key];
+  return `<div class="sub-item ${unmeasured ? 'unmeasured' : ''}">
+    <span class="k">${label}</span><span class="v mono">${unmeasured ? 'n/a' : val.toFixed(1)} / ${cap}</span>
+  </div>`;
+}
+
+function rowHtml(r, rank){
+  const date = r.created ? new Date(r.created).toISOString().slice(0,10) : '—';
+  return `
+  <div class="row" data-id="${r.id}">
+    <div class="row-main">
+      <div class="rank mono">${String(rank).padStart(2,'0')}</div>
+      <div class="row-id">
+        <div class="row-name">${r.name} <span class="domain mono">${r.domain || 'no domain'}</span></div>
+        <div class="row-tagline">${r.tagline || ''}</div>
+        <div class="row-tags">${r.topics.slice(0,4).map(t => `<span class="tag">${t}</span>`).join('')}</div>
+        <div class="badges">
+          <span class="badge ${r.gh ? 'on' : ''}">GH${r.stars ? ' ★'+r.stars : ''}</span>
+          <span class="badge ${r.li ? 'on' : ''}">LI</span>
+          <span class="badge ${r.tw ? 'on' : ''}">X</span>
+          <span class="badge ${r.pricing ? 'on' : ''}">$</span>
+          <span class="badge ${r.docs ? 'on' : ''}">DOC</span>
+        </div>
+      </div>
+      <div class="row-bar-col"><div class="score-bar">${scoreBarHtml(r)}</div></div>
+      <div class="row-score">${r.composite}<div class="cap">/ 50 reach.</div></div>
+      <div class="chevron">▸</div>
+    </div>
+    <div class="row-detail">
+      <div class="row-detail-inner">
+        <div class="sub-list">
+          ${subRow('Traction · votes', 'traction_votes', 20, r, true)}
+          ${subRow('Traction · comments', 'traction_comments', 10, r, true)}
+          ${subRow('Team · maker count', 'team_maker_count', 8, r)}
+          ${subRow('Team · repeat founder', 'team_repeat_founder', 10, r)}
+          ${subRow('Team · social presence', 'team_social_presence', 7, r)}
+        </div>
+        <div class="sub-list">
+          ${subRow('Market · GitHub stars', 'market_github_stars', 10, r)}
+          ${subRow('Market · category crowding', 'market_category_crowding', 5, r)}
+          ${subRow('Market · site maturity', 'market_site_maturity', 10, r)}
+          ${subRow('Momentum · velocity', 'momentum_velocity', 20, r, true)}
+          <div class="makers-line">Launched ${date} · makers: <span class="mono">${r.makers.join(', ') || '—'}</span></div>
+        </div>
+      </div>
+      <div class="detail-links" style="padding:0 18px 16px;">
+        <a href="${r.url}" target="_blank" rel="noopener">Product Hunt listing ↗</a>
+        ${r.domain ? `<a href="https://${r.domain}" target="_blank" rel="noopener">Visit ${r.domain} ↗</a>` : ''}
+        ${r.gh ? `<a href="https://github.com/${r.gh}" target="_blank" rel="noopener">github.com/${r.gh} ↗</a>` : ''}
+      </div>
+    </div>
+  </div>`;
+}
+
+function render(){
+  const q = document.getElementById('search').value.trim().toLowerCase();
+  const sortBy = document.getElementById('sort').value;
+
+  let rows = DATA.filter(r =>
+    !q ||
+    r.name.toLowerCase().includes(q) ||
+    (r.domain || '').toLowerCase().includes(q) ||
+    r.topics.some(t => t.toLowerCase().includes(q))
+  );
+
+  const sorters = {
+    composite: (a,b) => b.composite - a.composite,
+    name: (a,b) => a.name.localeCompare(b.name),
+    recent: (a,b) => new Date(b.created) - new Date(a.created),
+    stars: (a,b) => (b.stars||0) - (a.stars||0),
+  };
+  rows = rows.slice().sort(sorters[sortBy]);
+
+  const list = document.getElementById('list');
+  if (!rows.length){
+    list.innerHTML = `<div class="empty-state">No companies match “${q}”.</div>`;
+    return;
+  }
+  list.innerHTML = rows.map((r,i) => rowHtml(r, i+1)).join('');
+
+  list.querySelectorAll('.row-main').forEach(main => {
+    main.addEventListener('click', () => main.closest('.row').classList.toggle('open'));
+  });
+}
+
+document.getElementById('search').addEventListener('input', render);
+document.getElementById('sort').addEventListener('change', render);
+render();
+</script>
