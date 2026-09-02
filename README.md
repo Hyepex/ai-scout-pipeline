@@ -4,6 +4,10 @@ Automated AI-startup discovery and scoring pipeline. Phase 1 scope: Product
 Hunt as the sole data source, to prove a signal-scoring rubric before taking
 on the cost or ToS risk of paid sources (Crunchbase, Wellfound, etc).
 
+**Live:** [Scout Deck](https://claude.ai/code/artifact/37be1084-23d8-4d0a-82b4-acc89a4a226f)
+(the results dashboard) · [Signal & Noise](https://claude.ai/code/artifact/bf927cdc-3a07-412e-87e3-449deb2aaf07)
+(a case study with screenshots — start here for the short version).
+
 ## What it does
 
 1. **Ingest** — two interchangeable sources, same output schema downstream:
